@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>traditional clock</title>
+    <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script type="text/javascript" src="./jquery.min.js"></script>
+</head>
+<body>
+</body>
+<script type="text/javascript">
+    var secondsNumDiv, minutesNumDiv, hoursNumDiv, weeksNumDiv, datesNumDiv, monthsNumDiv, yearsNumDiv;
+    var nowTime;
+
+    $(document).ready(function () {
+        console.log('ready');
+
+        let html = '<div id="traditionalClock">' +
+            '    <div id="nowTime"></div>' +
+            '    <div class="out seconds">秒</div>' +
+            '    <div class="out minutes">分</div>' +
+            '    <div class="out hours">时</div>' +
+            '    <div class="out weeks">星期</div>' +
+            '    <div class="out dates">日</div>' +
+            '    <div class="out months">月</div>' +
+            '    <div class="out years">年</div>' +
+            '    <div class="out seconds num trans-ori time-trans-moving"></div>' +
+            '    <div class="out minutes num trans-ori time-trans-moving"></div>' +
+            '    <div class="out hours num trans-ori time-trans-moving"></div>' +
+            '    <div class="out weeks num trans-ori time-trans-moving"></div>' +
+            '    <div class="out dates num trans-ori time-trans-moving"></div>' +
+            '    <div class="out months num trans-ori time-trans-moving"></div>' +
+            '    <div class="out years num"></div>' +
+            '</div>';
+        let style = '<style>#traditionalClock{width:1000px;height:1000px;position:absolute;zoom:.8}.out{height:25px;position:absolute;top:50%;left:50%;text-align:right;line-height:25px}.seconds{width:500px;z-index:1}.seconds.num{width:480px;z-index:2}.minutes{width:420px;z-index:3}.minutes.num{width:400px;z-index:4}.hours{width:340px;z-index:5}.hours.num{width:320px;z-index:6}.weeks.num{width:247px;z-index:7}.weeks{width:230px;z-index:8}.dates{width:180px;z-index:9}.dates.num{width:160px;z-index:10}.months{width:110px;z-index:11}.months.num{width:90px;z-index:12}.years{left:45%;width:10%;z-index:13}.years.num{width:80px;z-index:14}.num div{position:absolute;width:100%;top:0}.trans-ori{transform-origin:left}.time-trans-start{transition:transform .5s ease}.time-trans-moving{transition:transform .2s ease}#nowTime{position:absolute;right:-10%;top:50%}</style>';
+        $(document.body).append(html);
+        $(document.head).append(style);
+
+        let date = new Date();
+
+        // 生成指针
+        genTimeObj('seconds', date);
+        genTimeObj('minutes', date);
+        genTimeObj('hours', date);
+        genTimeObj('weeks', date);
+        genTimeObj('dates', date);
+        genTimeObj('months', date);
+        genTimeObj('years', date);
+
+        // 添加指针初始动画
+        setTimeout(function () {
+            moveTimeObj('seconds', date);
+            moveTimeObj('minutes', date);
+            moveTimeObj('hours', date);
+            moveTimeObj('weeks', date);
+            moveTimeObj('dates', date);
+            moveTimeObj('months', date);
+        }, 10);
+
+        secondsNumDiv = $('.seconds.num');
+        minutesNumDiv = $('.minutes.num');
+        hoursNumDiv = $('.hours.num');
+        weeksNumDiv = $('.weeks.num');
+        datesNumDiv = $('.dates.num');
+        monthsNumDiv = $('.months.num');
+        yearsNumDiv = $('.years.num');
+        nowTime = $('#nowTime');
+        // 每秒动画
+        setInterval(function () {
+            date = circleTimeObj1(date, new Date());
+        }, 1000);
+
+        // var dd = new Date(date);
+        // $(document).keypress(function (e) {
+        //   date = circleTimeObj1(date, new Date(dd.setDate(dd.getDate() + 1)));
+        // });
+    });
+
+    var secondSteps = 1, minSteps = 0, hourSteps = 0, daySteps = 0, dateSteps = 0, monthSteps = 0, yearSteps = 1;
+
+    function circleTimeObj1(startDate, now) {
+        nowTime.html(now.toLocaleTimeString());
+
+        let secondMoveDeg = secondSteps++ * 6;
+        secondsNumDiv.css('transform', 'rotateZ(' + secondMoveDeg + 'deg)');
+
+        if (now.getSeconds() === 0 && now.getMinutes() !== startDate.getMinutes()) {
+            minSteps++;
+        }
+        let minuteMoveDeg = minSteps * 6;
+        minutesNumDiv.css('transform', 'rotateZ(' + minuteMoveDeg + 'deg)');
+
+        if (now.getSeconds() === 0 && now.getHours() !== startDate.getHours()) {
+            hourSteps++;
+        }
+        let hourMoveDeg = hourSteps * (360 / 24);
+        hoursNumDiv.css('transform', 'rotateZ(' + hourMoveDeg + 'deg)');
+
+        if (now.getSeconds() === 0 && now.getDay() !== startDate.getDay()) {
+            daySteps++;
+        }
+        let weekMoveDeg = daySteps * (360 / 7);
+        weeksNumDiv.css('transform', 'rotateZ(' + weekMoveDeg + 'deg)');
+
+        let days = getDaysOfCurMonth(now);
+        if (now.getSeconds() === 0 && now.getDate() !== startDate.getDate()) {
+            dateSteps++;
+        }
+        let dateMoveDeg = dateSteps * (360 / days);
+        datesNumDiv.css('transform', 'rotateZ(' + dateMoveDeg + 'deg)');
+
+        if (now.getSeconds() === 0 && now.getMonth() !== startDate.getMonth()) {
+            if (now.getMonth() !== 7 && now.getMonth() !== 0) {
+                genTimeObj("dates", now);
+                dateSteps = 0;
+                setTimeout(function () {
+                    moveTimeObj("dates", now);
+                }, 10);
+            }
+            monthSteps++;
+        }
+        let monthMoveDeg = monthSteps * (360 / 12);
+        monthsNumDiv.css('transform', 'rotateZ(' + monthMoveDeg + 'deg)');
+
+        if (now.getFullYear() !== startDate.getFullYear()) {
+            yearsNumDiv.first().css('transform', 'rotateX(-' + yearSteps++ * 360 + 'deg)');
+            setTimeout(function () {
+                genTimeObj('years', now);
+            }, 500);
+        }
+        return now;
+    }
+
+    function genTimeObj(type, date) {
+        let targetDiv = $('.' + type + '.num');
+        targetDiv.empty();
+        if (type === 'years') {
+            targetDiv.prepend('<div class="time-trans-moving">' + translateToTraditional(date.getFullYear()) + '</div>');
+            return;
+        }
+        targetDiv.css('transform', 'rotateZ(0deg)');
+        let objNum = getObjNum(type, date);
+
+        // 计算当前时间
+        let offset = getOffset(type, date);
+
+        for (let j = 0; j < objNum; j++) {
+            let obj = document.createElement('div');
+            $(obj).addClass("trans-ori");
+            $(obj).addClass('time-trans-start');
+            obj.innerText = getCharacterArray(type)[(j + offset) % objNum];
+            targetDiv.prepend(obj);
+        }
+    }
+
+    function moveTimeObj(type, date) {
+        let targetDiv = $('.' + type + '.num div');
+        let objNum = getObjNum(type, date);
+        let perDeg = 360 / objNum;
+        for (let j = 0; j < objNum; j++) {
+            let obj = $(targetDiv).eq(j);
+            $(obj).css('transform', 'rotateZ(' + j * perDeg + 'deg)');
+        }
+    }
+
+    function getOffset(type, date) {
+        switch (type) {
+            case 'seconds':
+                return date.getSeconds() + 1;
+            case 'minutes':
+                return date.getMinutes() + 1;
+            case 'hours':
+                return date.getHours() + 1;
+            case 'weeks':
+                return date.getDay();
+            case 'dates':
+                return date.getDate();
+            case 'months':
+                return date.getMonth() + 1;
+            default:
+                break;
+        }
+    }
+
+    function getDaysOfCurMonth(date) {
+        let year = date.getFullYear();
+        let month = date.getMonth() + 1;
+        let d = new Date(year, month, 0);
+        return d.getDate();
+    }
+
+    function getObjNum(type, date) {
+        let objNum;
+        switch (type) {
+            case 'seconds':
+                objNum = 60;
+                break;
+            case 'minutes':
+                objNum = 60;
+                break;
+            case 'hours':
+                objNum = 24;
+                break;
+            case 'weeks':
+                objNum = 7;
+                break;
+            case 'dates':
+                objNum = getDaysOfCurMonth(date);
+                break;
+            case 'months':
+                objNum = 12;
+                break;
+            default:
+                objNum = 0;
+                break;
+        }
+        return objNum;
+    }
+
+    function getCharacterArray(type) {
+        switch (type) {
+            case 'seconds':
+                return timeCharacters;
+            case 'minutes':
+                return timeCharacters;
+            case 'hours':
+                return timeCharacters;
+            case 'weeks':
+                return weekCharacters;
+            case 'dates':
+                return dateCharacters;
+            case 'months':
+                return dateCharacters;
+            default:
+                break;
+        }
+    }
+
+    function translateToTraditional(num) {
+        return timeCharacters[Math.floor(num / 10 / 10 / 10 % 10)]
+            + timeCharacters[Math.floor(num / 10 / 10 % 10)]
+            + timeCharacters[Math.floor(num / 10 % 10)]
+            + timeCharacters[Math.floor(num % 10)];
+    }
+
+    var timeCharacters = ["〇", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二", "十三", "十四", "十五", "十六", "十七", "十八", "十九", "二十", "二十一", "二十二", "二十三", "二十四", "二十五", "二十六", "二十七", "二十八", "二十九", "三十", "三十一", "三十二", "三十三", "三十四", "三十五", "三十六", "三十七", "三十八", "三十九", "四十", "四十一", "四十二", "四十三", "四十四", "四十五", "四十六", "四十七", "四十八", "四十九", "五十", "五十一", "五十二", "五十三", "五十四", "五十五", "五十六", "五十七", "五十八", "五十九"];
+
+    var weekCharacters = ["一", "二", "三", "四", "五", "六", "日"];
+
+    var dateCharacters = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二", "十三", "十四", "十五", "十六", "十七", "十八", "十九", "二十", "二十一", "二十二", "二十三", "二十四", "二十五", "二十六", "二十七", "二十八", "二十九", "三十", "三十一"];
+</script>
+<script type="text/css">
+    #traditionalClock {
+        width: 1000px;
+        height: 1000px;
+        position: absolute;
+        zoom: 0.8;
+    }
+
+    .out {
+        height: 25px;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        text-align: right;
+        line-height: 25px;
+    }
+
+    .seconds {
+        width: 500px;
+        z-index: 1;
+    }
+
+    .seconds.num {
+        width: 480px;
+        z-index: 2;
+    }
+
+    .minutes {
+        width: 420px;
+        z-index: 3;
+    }
+
+    .minutes.num {
+        width: 400px;
+        z-index: 4;
+    }
+
+    .hours {
+        width: 340px;
+        z-index: 5;
+    }
+
+    .hours.num {
+        width: 320px;
+        z-index: 6;
+    }
+
+    .weeks.num {
+        width: 247px;
+        z-index: 7;
+    }
+
+    .weeks {
+        width: 230px;
+        z-index: 8;
+    }
+
+    .dates {
+        width: 180px;
+        z-index: 9;
+    }
+
+    .dates.num {
+        width: 160px;
+        z-index: 10;
+    }
+
+    .months {
+        width: 110px;
+        z-index: 11;
+    }
+
+    .months.num {
+        width: 90px;
+        z-index: 12;
+    }
+
+    .years {
+        left: 45%;
+        width: 10%;
+        z-index: 13;
+    }
+
+    .years.num {
+        width: 80px;
+        z-index: 14;
+    }
+
+    .num div {
+        position: absolute;
+        width: 100%;
+        top: 0;
+    }
+
+    .trans-ori {
+        transform-origin: left;
+    }
+
+    .time-trans-start {
+        transition: transform .5s ease;
+    }
+
+    .time-trans-moving {
+        transition: transform .2s ease;
+    }
+
+    #nowTime {
+        position: absolute;
+        right: -10%;
+        top: 55%;
+    }
+
+</script>
+</html>
